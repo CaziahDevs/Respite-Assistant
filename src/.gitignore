@@ -1,0 +1,7 @@
+#.gitignore
+
+# Ignore all files and folders starting with a dot
+.*
+
+# Ignore the.env file
+.env
