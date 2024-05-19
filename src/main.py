@@ -7,15 +7,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
+
 # Load environment variables from a.env file
 env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(env_path)
 username = os.getenv('username')
 password = os.getenv('password')
 url = os.getenv('url')
-
 driver = webdriver.Chrome()
-
 
 def login() -> None:
     """
@@ -55,61 +54,40 @@ def naviagate_to_clock() -> None:
     # Click on the "Clock In" button
     link = driver.find_element(By.PARTIAL_LINK_TEXT, "Clock In/Out")
     link.click()
-    time.sleep(5)
 
-def clock_in_out(in_or_out: bool) -> None:
+def clock_in() -> None:
     """
-    This function is used to clock in or out of work.
+    This function is used to clock in to work.
 
     Parameters:
-    in_or_out (bool): A boolean value indicating whether to clock in or out.
+    None
 
     Returns:
     None
 
     """
-    naviagate_to_clock()
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_all_elements_located((By.NAME, "Bci"))
+    )
+    clk_in_btn = driver.find_element(By.NAME, "Bci")
+    clk_in_btn.click()
 
-    if in_or_out:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.NAME, "Bci"))
-        )
-        clk_in_btn = driver.find_element(By.NAME, "Bci")
-        clk_in_btn.click()
-    else:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.NAME, "Bco"))
-        )
-        clk_out_btn = driver.find_element(By.NAME, "Bco")
-        clk_out_btn.click()
-        # driver.send_keys(Keys.ENTER)
-        # driver.send_keys(Keys.ENTER)
-
-
-
-# Function to check if the current time requires a clock_in or clock_out
-def run_bot() -> None:
+def clock_out() -> None:
     """
-    This function is used to run the bot. It checks if it is a weekday and the current time is between 6pm and 9pm (or 9:45pm on Fridays). If it is, it attempts to clock in or out of work.
+    This function is used to clock out of work.
 
     Parameters:
-        None
+    None
 
     Returns:
-        None
+    None
 
     """
-    current_time = time.localtime()
-    #Weekday between 6pm and 9pm
-    option1 = current_time.tm_wday < 5 and 18 <= current_time.tm_hour < 21
-    #Friday at 9:45pm
-    option2 = current_time.tm_wday == 4 and current_time.tm_hour == 21 and current_time.tm_min == 45
-
-    if option1 or option2:
-        login()
-        clock_in_out(True) if current_time.tm_hour == 18 and current_time.tm_min == 0 else clock_in_out(False)
-
-
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.NAME, "Bco"))
+    )
+    clk_out_btn = driver.find_element(By.NAME, "Bco")
+    clk_out_btn.click()
 
 def main() -> None:
     """
@@ -123,7 +101,18 @@ def main() -> None:
         None
 
     """
-    run_bot()
+    current_time = time.localtime()
+    clock_in_condition = (current_time.tm_wday < 5) and (current_time.tm_hour == 18) and (current_time.tm_min == 0)
+    clock_out_condition = (current_time.tm_wday == 4) and (current_time.tm_hour == 21) and (current_time.tm_min == 0)
+    login()
+    naviagate_to_clock()
+    if clock_in_condition:
+        clock_in()
+    elif clock_out_condition:
+        clock_out()
+    else:
+        print("No changes made to the timesheet")
+    driver.close()
 
 if __name__ == "__main__":
     main()
